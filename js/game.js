@@ -162,7 +162,6 @@ class Game {
     this.lighting = new LightingSystem();
     this.hudTime  = new HudTime();
     this.mobile   = new MobileControls(this);
-    this.orientation = new OrientationGuard();
 
     // Game state
     this.state   = GSTATE.TITLE;
