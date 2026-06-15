@@ -6,8 +6,8 @@
 'use strict';
 
 // ── World constants ──────────────────────────────────
-const WORLD_W = 3200;  // total world width  (px)
-const WORLD_H = 3200;  // total world height (px)
+const WORLD_W = 5200;  // total world width  (px)
+const WORLD_H = 5200;  // total world height (px)
 const TILE    = 64;    // base tile size for layout
 
 // Camp is placed near the center of the world
@@ -43,7 +43,7 @@ class Forest {
     const rng = seededRng(42); // deterministic world
 
     // — Grass patches (color variation on the floor)
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 380; i++) {
       this.patches.push({
         x: rng() * WORLD_W,
         y: rng() * WORLD_H,
@@ -54,7 +54,7 @@ class Forest {
     }
 
     // — Trees
-    const treeCount = 600;
+    const treeCount = 1400;
     for (let i = 0; i < treeCount; i++) {
       const x = rng() * WORLD_W;
       const y = rng() * WORLD_H;
@@ -76,7 +76,7 @@ class Forest {
     }
 
     // — Rocks
-    for (let i = 0; i < 120; i++) {
+    for (let i = 0; i < 240; i++) {
       const x = rng() * WORLD_W;
       const y = rng() * WORLD_H;
       const dx = x - CAMP_X, dy = y - CAMP_Y;
@@ -85,7 +85,7 @@ class Forest {
     }
 
     // — Bushes
-    for (let i = 0; i < 250; i++) {
+    for (let i = 0; i < 520; i++) {
       const x = rng() * WORLD_W;
       const y = rng() * WORLD_H;
       const dx = x - CAMP_X, dy = y - CAMP_Y;
@@ -94,7 +94,7 @@ class Forest {
     }
 
     // — Flowers (small colour dots)
-    for (let i = 0; i < 300; i++) {
+    for (let i = 0; i < 650; i++) {
       this.flowers.push({
         x: rng() * WORLD_W,
         y: rng() * WORLD_H,
@@ -376,15 +376,20 @@ class Forest {
       x = 100 + rng() * (WORLD_W - 200);
       y = 100 + rng() * (WORLD_H - 200);
       tries++;
-    } while ((this.isInsideTree(x, y) || this.isInCamp(x, y)) && tries < 50);
+    } while ((this.isInsideTree(x, y) || this.isInCamp(x, y)) && tries < 90);
     return { x, y };
   }
 
   // ── Mini-map (small overview in corner) ───────────
-  drawMinimap(ctx, player, animals, canvasW, canvasH) {
-    const mapW = 140, mapH = 140;
-    const mx = canvasW - mapW - 16;
-    const my = 60;
+  drawMinimap(ctx, player, animals, canvasW, canvasH, opts = {}) {
+    const showAnimals = opts.showAnimals !== false;
+    const showCamp = opts.showCamp !== false;
+    const isSmall = canvasW < 620 || canvasH < 420;
+    const mapW = isSmall ? 155 : 260;
+    const mapH = isSmall ? 155 : 260;
+    const pad = isSmall ? 8 : 16;
+    const mx = canvasW - mapW - pad;
+    const my = canvasH - mapH - pad;
     const scaleX = mapW / WORLD_W;
     const scaleY = mapH / WORLD_H;
 
@@ -403,32 +408,76 @@ class Forest {
       ctx.fillRect(mx + t.x * scaleX, my + t.y * scaleY, 1, 1);
     }
 
-    // Camp
-    ctx.fillStyle = '#f0c040';
-    ctx.beginPath();
-    ctx.arc(mx + CAMP_X * scaleX, my + CAMP_Y * scaleY, 3, 0, Math.PI*2);
-    ctx.fill();
+    if (showCamp) {
+      // Camp
+      const campSx = mx + CAMP_X * scaleX;
+      const campSy = my + CAMP_Y * scaleY;
+      const campR = Math.max(4, CAMP_RADIUS * Math.min(scaleX, scaleY));
 
-    // Animals
-    for (const a of animals) {
-      if (!a.alive) continue;
-      ctx.fillStyle = a.color;
+      // Safe-zone ring
+      ctx.strokeStyle = 'rgba(240,192,64,0.55)';
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(mx + a.x * scaleX, my + a.y * scaleY, 1.5, 0, Math.PI*2);
+      ctx.arc(campSx, campSy, campR, 0, Math.PI*2);
+      ctx.stroke();
+
+      // Center marker
+      ctx.fillStyle = '#f0c040';
+      ctx.beginPath();
+      ctx.arc(campSx, campSy, 4, 0, Math.PI*2);
       ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.beginPath();
+      ctx.arc(campSx, campSy, 1.6, 0, Math.PI*2);
+      ctx.fill();
+
+      // Label
+      ctx.globalAlpha = 0.8;
+      ctx.fillStyle = '#f0c040';
+      ctx.font = '10px Inter, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('CAMP', campSx + 8, campSy - 6);
+      ctx.globalAlpha = 1;
+    }
+
+    if (showAnimals) {
+      // Animals
+      for (const a of animals) {
+        if (!a.alive) continue;
+        ctx.fillStyle = a.color;
+        ctx.beginPath();
+        ctx.arc(mx + a.x * scaleX, my + a.y * scaleY, 1.5, 0, Math.PI*2);
+        ctx.fill();
+      }
     }
 
     // Player
+    const px = mx + player.x * scaleX;
+    const py = my + player.y * scaleY;
+    ctx.save();
+    ctx.translate(px, py);
     ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.arc(mx + player.x * scaleX, my + player.y * scaleY, 2.5, 0, Math.PI*2);
+    ctx.moveTo(-4.5, -1.2);
+    ctx.lineTo(-2.2, -5.4);
+    ctx.lineTo( 2.2, -5.4);
+    ctx.lineTo( 4.5, -1.2);
+    ctx.closePath();
     ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    roundRect(ctx, -6.2, -1.2, 12.4, 3.4, 1.2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
 
     // Label
     ctx.fillStyle = 'rgba(170,200,170,0.6)';
-    ctx.font = '9px Inter, sans-serif';
+    ctx.font = isSmall ? '8px Inter, sans-serif' : '9px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('MAP', mx + mapW/2, my + mapH + 12);
+    ctx.fillText('MAP', mx + mapW/2, my - 6);
   }
 }
 

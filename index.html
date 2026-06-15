@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>THE HUNT</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8C%B0%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -22,13 +23,14 @@
     <!-- HUD overlay (rendered by ui.js) -->
     <div id="hud" class="hidden">
       <div id="hud-top">
-        <div class="hud-stat" id="hud-day">📅 Day <span id="day-val">1</span></div>
+        <div class="hud-stat" id="hud-day">📅 <span class="hud-label">Day</span> <span id="day-val">1</span></div>
         <div class="hud-stat" id="hud-money">💰 <span id="money-val">0</span></div>
         <div class="hud-stat" id="hud-arrows">🏹 <span id="arrows-val">10</span></div>
-        <div class="hud-stat" id="hud-bag">🎒 <span id="bag-val">0</span> / <span id="bag-max">5</span></div>
+        <div class="hud-stat" id="hud-bag">🎒 <span id="bag-val">0</span><span class="hud-dim">/</span><span id="bag-max">5</span></div>
       </div>
 
       <!-- Quest Overlay (top-right corner) -->
+      <button id="quest-toggle" class="quest-toggle hidden" aria-label="Quest">?</button>
       <div id="hud-quest" class="hidden">
         <div class="quest-title">Active Quest</div>
         <div id="quest-desc">None</div>
@@ -42,9 +44,6 @@
         <div class="bar-bg"><div class="bar-fill" id="stamina-bar" style="background:#f0c040;"></div></div>
       </div>
 
-      <div id="hud-bottom-right">
-        <span id="hud-hint">E = Return to Camp &nbsp;|&nbsp; ESC = Pause</span>
-      </div>
     </div>
 
     <!-- ===== SCREENS ===== -->
@@ -52,12 +51,50 @@
     <!-- Title / Start Screen -->
     <div id="screen-title" class="screen">
       <div class="screen-box">
-        <h1 class="game-title">🌲 THE HUNT 🌲</h1>
-        <p class="subtitle">A top-down hunting adventure</p>
+        <h1 class="game-title">THE HUNT</h1>
+        <p class="subtitle">Hunt. Upgrade. Survive the night.</p>
         <div class="key-guide">
-          <p><kbd>W A S D</kbd> Move</p>
-          <p><kbd>Mouse</kbd> Aim &nbsp; <kbd>LClick</kbd> Shoot</p>
-          <p><kbd>E</kbd> Return to Camp &nbsp; <kbd>ESC</kbd> Pause</p>
+          <div class="guide-grid">
+            <div class="guide-section">
+              <div class="guide-title">Controls</div>
+              <div class="guide-line"><kbd>W A S D</kbd> Move <span class="sep">•</span> <kbd>Shift</kbd> Sprint</div>
+              <div class="guide-line"><kbd>Mouse</kbd> Aim <span class="sep">•</span> <kbd>LClick</kbd> / <kbd>Space</kbd> Shoot</div>
+              <div class="guide-line"><kbd>E</kbd> Camp action <span class="muted">(only inside camp)</span></div>
+              <div class="guide-line"><kbd>ESC</kbd> Pause</div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-title">Huntable</div>
+              <div class="guide-line">🐇 Rabbit <span class="sep">•</span> 🦊 Fox <span class="sep">•</span> 🦌 Deer</div>
+              <div class="guide-line">🫎 Moose <span class="sep">•</span> 🦉 Owl <span class="sep">•</span> ✨ White Stag</div>
+              <div class="guide-hint">Get close, then take the shot. Collect rewards by walking over the body.</div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-title">Dangerous</div>
+              <div class="guide-line">🐺 Wolf <span class="sep">•</span> 🐗 Boar</div>
+              <div class="guide-line">🐻 Bear <span class="sep">•</span> 🐆 Cougar</div>
+              <div class="guide-hint">Predators chase on sight. Use camp as a safe reset.</div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-title">Camp & Upgrades</div>
+              <div class="guide-line">⛺ Camp is a safe zone — predators won’t enter.</div>
+              <div class="guide-line">Heal, buy upgrades, restock, then head out.</div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-title">Loot</div>
+              <div class="guide-line">After a kill, walk close to collect rewards.</div>
+              <div class="guide-line">Look for the floating tag: <span class="loot-pill">+$</span> above the body.</div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-title">Night</div>
+              <div class="guide-line">At sunset, visibility drops to your hunter circle.</div>
+              <div class="guide-line">Survive until sunrise — predators roam more at night.</div>
+            </div>
+          </div>
         </div>
         <button id="btn-start" class="btn-primary">Start Hunt</button>
       </div>
@@ -73,7 +110,6 @@
 
         <div class="camp-actions">
           <button id="btn-enter-forest" class="btn-primary">🌲 Enter Forest</button>
-          <button id="btn-next-day" class="btn-secondary">☀️ Next Day</button>
         </div>
       </div>
     </div>
@@ -99,6 +135,11 @@
   </div><!-- end #game-wrapper -->
 
   <!-- ===== JS Modules (order matters) ===== -->
+  <script src="js/dayNight.js"></script>
+  <script src="js/lighting.js"></script>
+  <script src="js/hudTime.js"></script>
+  <script src="js/mobileControls.js"></script>
+  <script src="js/orientationGuard.js"></script>
   <script src="js/forest.js"></script>
   <script src="js/arrow.js"></script>
   <script src="js/animal.js"></script>
