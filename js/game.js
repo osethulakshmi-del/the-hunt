@@ -158,6 +158,11 @@ class Game {
     this.arrows  = new ArrowManager();
     this.ui      = new UIManager();
     this.sounds  = new SoundSystem();
+    this.dayNight = new DayNightCycle();
+    this.lighting = new LightingSystem();
+    this.hudTime  = new HudTime();
+    this.mobile   = new MobileControls(this);
+    this.orientation = new OrientationGuard();
 
     // Game state
     this.state   = GSTATE.TITLE;
@@ -213,7 +218,6 @@ class Game {
     // UI buttons
     document.getElementById('btn-start').addEventListener('click', () => this._startGame());
     document.getElementById('btn-enter-forest').addEventListener('click', () => this._enterForest());
-    document.getElementById('btn-next-day').addEventListener('click', () => this._nextDay());
     document.getElementById('btn-resume').addEventListener('click', () => this._resume());
     document.getElementById('btn-quit-pause').addEventListener('click', () => this._quitToTitle());
     document.getElementById('btn-restart').addEventListener('click', () => this._startGame());
@@ -263,16 +267,12 @@ class Game {
     this.ui.showHUD();
     this.player.enterForest();
     this.spawner.spawnDay(this.player.day, this.forest);
+    this.dayNight.startDay();
+    this.lighting.setNight(false);
     this.arrows.clear();
     this.dayTimer = 0;
     this.state = GSTATE.FOREST;
     this.ui.addNotification(`🌲 Day ${this.player.day} — Hunt begins!`, '#5aab5a');
-  }
-
-  _nextDay() {
-    // Advance day and re-enter forest
-    this.player.day++;
-    this._enterForest();
   }
 
   _tryReturnToCamp() {
@@ -328,7 +328,11 @@ class Game {
       { id: 'deer',   targetType: 'deer',   targetCount: 2, reward: 75, desc: 'Hunt 2 Deer' },
       { id: 'wolf',   targetType: 'wolf',   targetCount: 1, reward: 100, desc: 'Kill 1 Wolf' },
       { id: 'fox',    targetType: 'fox',    targetCount: 2, reward: 60, desc: 'Hunt 2 Foxes' },
-      { id: 'bear',   targetType: 'bear',   targetCount: 1, reward: 120, desc: 'Hunt 1 Bear' }
+      { id: 'bear',   targetType: 'bear',   targetCount: 1, reward: 120, desc: 'Hunt 1 Bear' },
+      { id: 'boar',   targetType: 'boar',   targetCount: 1, reward: 90,  desc: 'Take down 1 Boar' },
+      { id: 'owl',    targetType: 'owl',    targetCount: 2, reward: 80,  desc: 'Hunt 2 Owls' },
+      { id: 'moose',  targetType: 'moose',  targetCount: 1, reward: 110, desc: 'Hunt 1 Moose' },
+      { id: 'cougar', targetType: 'cougar', targetCount: 1, reward: 140, desc: 'Defeat 1 Cougar' }
     ];
     const idx = Math.floor(Math.random() * quests.length);
     this.currentQuest = quests[idx];
@@ -365,7 +369,25 @@ class Game {
 
   // ── Update ────────────────────────────────────────
   _update(dt) {
+    if (this.mobile) this.mobile.update(dt);
+
     if (this.state !== GSTATE.FOREST) return;
+
+    const events = this.dayNight.update(dt);
+    if (events.sunset) {
+      this.lighting.setNight(true);
+      this.ui.addNotification('🌙 Sunset — Survive the night!', '#aad4ff');
+      this.spawner.spawnNightBoost(this.player.day, this.forest);
+    }
+    if (events.sunrise) {
+      this.lighting.setNight(false);
+      this.player.day++;
+      this.spawner.spawnDay(this.player.day, this.forest);
+      this.ui.addNotification(`☀️ Sunrise — Day ${this.player.day} begins!`, '#f0c040');
+    }
+    this.lighting.update(dt);
+
+    if (this.hudTime) this.hudTime.setText(this.dayNight.hudText);
 
     // Player
     this.player.update(dt, this.forest, this.mouse);
@@ -582,10 +604,20 @@ class Game {
     // Trees (above everything to give depth illusion)
     this.forest.drawTrees(ctx, W, H);
 
-    // Minimap
-    this.forest.drawMinimap(ctx, this.player, this.spawner.animals, W, H);
+    // Night lighting overlay (darkness + player light)
+    this.lighting.draw(ctx, this.player, this.forest, W, H);
 
-    // UI canvas elements (floating text, crosshair, etc.)
+    // Minimap (drawn above lighting for clarity)
+    this.forest.drawMinimap(
+      ctx,
+      this.player,
+      this.spawner.animals,
+      W,
+      H,
+      this.dayNight.isNight ? { showAnimals: false, showCamp: false } : { showAnimals: true, showCamp: true }
+    );
+
+    // UI canvas elements (floating text, crosshair, etc.) drawn above lighting
     this.ui.draw(ctx, this.forest, this.player, W, H);
 
     // Pause overlay

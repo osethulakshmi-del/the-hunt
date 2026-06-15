@@ -15,7 +15,7 @@ const ANIMAL_TYPES = {
     bodyColor:  '#e8c8c8',
     speed:      70,            // px / second (wander)
     fleeSpeed:  160,           // px / second (when spooked)
-    fleeRadius: 200,           // distance at which it notices the player
+    fleeRadius: 140,           // distance at which it notices the player
     health:     1,
     value:      10,
     hitRadius:  14,
@@ -30,7 +30,7 @@ const ANIMAL_TYPES = {
     bodyColor:  '#e07830',
     speed:      100,
     fleeSpeed:  220,
-    fleeRadius: 240,
+    fleeRadius: 170,
     health:     2,
     value:      25,
     hitRadius:  16,
@@ -45,7 +45,7 @@ const ANIMAL_TYPES = {
     bodyColor:  '#c89060',
     speed:      120,
     fleeSpeed:  280,
-    fleeRadius: 300,
+    fleeRadius: 210,
     health:     3,
     value:      50,
     hitRadius:  18,
@@ -58,7 +58,7 @@ const ANIMAL_TYPES = {
     emoji:      '🐻',
     color:      '#5a3c22',
     bodyColor:  '#7a5a3a',
-    speed:      70,
+    speed:      62,
     fleeSpeed:  0,
     fleeRadius: 0,
     health:     6,
@@ -67,7 +67,7 @@ const ANIMAL_TYPES = {
     bodyR:      20,
     aggro:      true,
     aggroRadius: 250,
-    chargeSpeed: 170,
+    chargeSpeed: 150,
     attackRadius: 25,
     damage:     20,
     rarity:     0.15
@@ -77,7 +77,7 @@ const ANIMAL_TYPES = {
     emoji:      '🐺',
     color:      '#7f8c8d',
     bodyColor:  '#95a5a6',
-    speed:      100,
+    speed:      90,
     fleeSpeed:  0,
     fleeRadius: 0,
     health:     3,
@@ -86,7 +86,7 @@ const ANIMAL_TYPES = {
     bodyR:      13,
     aggro:      true,
     aggroRadius: 200,
-    chargeSpeed: 220,
+    chargeSpeed: 195,
     attackRadius: 20,
     damage:     10,
     rarity:     0.3
@@ -98,13 +98,81 @@ const ANIMAL_TYPES = {
     bodyColor:  '#ffffff',
     speed:      150,
     fleeSpeed:  340,
-    fleeRadius: 380,
+    fleeRadius: 260,
     health:     4,
     value:      500,
     hitRadius:  18,
     bodyR:      15,
     aggro:      false,
     rarity:     0.04           // very rare
+  },
+  boar: {
+    name:       'Boar',
+    emoji:      '🐗',
+    color:      '#3a2a1e',
+    bodyColor:  '#4a3524',
+    speed:      72,
+    fleeSpeed:  0,
+    fleeRadius: 0,
+    health:     4,
+    value:      65,
+    hitRadius:  18,
+    bodyR:      16,
+    aggro:      true,
+    aggroRadius: 220,
+    chargeSpeed: 210,
+    attackRadius: 22,
+    damage:     14,
+    rarity:     0.25
+  },
+  owl: {
+    name:       'Owl',
+    emoji:      '🦉',
+    color:      '#bfb6a6',
+    bodyColor:  '#d6cdbc',
+    speed:      110,
+    fleeSpeed:  320,
+    fleeRadius: 220,
+    health:     1,
+    value:      40,
+    hitRadius:  14,
+    bodyR:      12,
+    aggro:      false,
+    rarity:     0.12
+  },
+  moose: {
+    name:       'Moose',
+    emoji:      '🫎',
+    color:      '#8b6a44',
+    bodyColor:  '#a47c52',
+    speed:      85,
+    fleeSpeed:  240,
+    fleeRadius: 240,
+    health:     4,
+    value:      90,
+    hitRadius:  20,
+    bodyR:      18,
+    aggro:      false,
+    rarity:     0.18
+  },
+  cougar: {
+    name:       'Cougar',
+    emoji:      '🐆',
+    color:      '#caa45f',
+    bodyColor:  '#ddb870',
+    speed:      108,
+    fleeSpeed:  0,
+    fleeRadius: 0,
+    health:     4,
+    value:      85,
+    hitRadius:  16,
+    bodyR:      14,
+    aggro:      true,
+    aggroRadius: 260,
+    chargeSpeed: 245,
+    attackRadius: 22,
+    damage:     16,
+    rarity:     0.18
   }
 };
 
@@ -165,6 +233,10 @@ class Animal {
 
     // Trail / footstep particles (small circles)
     this.footParticles = [];
+
+    // Flee behavior helpers (for passive animals)
+    this.fleeHeading = Math.random() * Math.PI * 2;
+    this.fleeJitterTimer = 0;
   }
 
   // ── Main update ───────────────────────────────────
@@ -233,15 +305,27 @@ class Animal {
     if (dist < this.fleeRadius) {
       // Player too close → flee
       this.state = STATE.FLEE;
-      const len = dist || 1;
-      const nx = -dx/len, ny = -dy/len;
-      // Add some random scatter
-      const scatter = 0.35;
-      const fx = nx + (Math.random()-0.5)*scatter;
-      const fy = ny + (Math.random()-0.5)*scatter;
-      const flen = Math.sqrt(fx*fx+fy*fy)||1;
-      this.vx = (fx/flen) * this.fleeSpeed;
-      this.vy = (fy/flen) * this.fleeSpeed;
+
+      // Base direction away from player
+      const awayAngle = Math.atan2(-dy, -dx);
+
+      // Update jitter timer: occasionally pick a new heading offset
+      this.fleeJitterTimer -= dt;
+      if (this.fleeJitterTimer <= 0) {
+        this.fleeJitterTimer = 0.12 + Math.random() * 0.22;
+
+        // Add a small random turn (bigger when closer to player)
+        const danger = 1 - Math.min(1, dist / Math.max(1, this.fleeRadius));
+        const turnAmp = 0.25 + danger * 0.55;
+        this.fleeHeading += (Math.random() - 0.5) * turnAmp;
+      }
+
+      // Steer flee heading toward the away angle (so it still escapes)
+      this.fleeHeading = lerpAngle(this.fleeHeading, awayAngle, dt * 4.5);
+
+      // Apply movement along the (jittery) flee heading
+      this.vx = Math.cos(this.fleeHeading) * this.fleeSpeed;
+      this.vy = Math.sin(this.fleeHeading) * this.fleeSpeed;
     } else {
       if (this.state === STATE.FLEE) {
         // Just escaped; slow down
@@ -388,6 +472,22 @@ class Animal {
       ctx.globalAlpha = this.deathAlpha;
     }
 
+    // Loot indicator (dead but not collected)
+    if (!this.alive && !this._collected) {
+      const bob = Math.sin(Date.now() * 0.006 + this.x * 0.01) * 3;
+      ctx.globalAlpha = Math.min(1, this.deathAlpha) * 0.95;
+      ctx.font = 'bold 12px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      const text = `${this.emoji} +$${this.value}`;
+      const w = ctx.measureText(text).width + 14;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      roundRect(ctx, sx - w/2, sy - r - 36 + bob, w, 20, 6);
+      ctx.fill();
+      ctx.fillStyle = '#aaff88';
+      ctx.fillText(text, sx, sy - r - 22 + bob);
+      ctx.globalAlpha = this.alive ? 1 : this.deathAlpha;
+    }
+
     // Foot particles
     for (const p of this.footParticles) {
       const { sx: px, sy: py } = forest.toScreen(p.x, p.y);
@@ -422,6 +522,10 @@ class Animal {
       case 'bear':   this._drawBear(ctx, r);   break;
       case 'stag':   this._drawStag(ctx, r);   break;
       case 'wolf':   this._drawWolf(ctx, r);   break;
+      case 'boar':   this._drawBoar(ctx, r);   break;
+      case 'owl':    this._drawOwl(ctx, r);    break;
+      case 'moose':  this._drawMoose(ctx, r);  break;
+      case 'cougar': this._drawCougar(ctx, r); break;
     }
 
     ctx.restore();
@@ -663,6 +767,189 @@ class Animal {
     ctx.fillStyle = '#ffffff';
     ctx.beginPath(); ctx.arc(-r*0.12, -r*1.17, 1, 0, Math.PI*2); ctx.fill();
   }
+
+  _drawBoar(ctx, r) {
+    const c = this.hitFlash > 0 ? '#cc6666' : this.bodyColor;
+
+    // Body
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r*0.9, r*0.75, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Head
+    ctx.beginPath();
+    ctx.ellipse(0, -r*0.75, r*0.55, r*0.5, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Snout
+    ctx.fillStyle = '#7a5a44';
+    ctx.beginPath();
+    ctx.ellipse(0, -r*0.55, r*0.28, r*0.22, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Tusks
+    ctx.strokeStyle = '#e8e0d0';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(-r*0.18, -r*0.5, r*0.18, Math.PI*0.2, Math.PI*0.9);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(r*0.18, -r*0.5, r*0.18, Math.PI*0.1, Math.PI*0.8);
+    ctx.stroke();
+
+    // Eyes
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.arc(-r*0.18, -r*0.86, 2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(r*0.18, -r*0.86, 2, 0, Math.PI*2); ctx.fill();
+
+    // Bristle ridge
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-r*0.55, -r*0.05);
+    ctx.lineTo(0, -r*0.25);
+    ctx.lineTo(r*0.55, -r*0.05);
+    ctx.stroke();
+
+    // Charge indicator
+    if (this.state === STATE.CHARGE) {
+      ctx.strokeStyle = '#ff4444';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 1.45, 0, Math.PI*2);
+      ctx.stroke();
+    }
+  }
+
+  _drawOwl(ctx, r) {
+    const c = this.hitFlash > 0 ? '#ff9999' : this.bodyColor;
+
+    // Wings
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.beginPath();
+    ctx.ellipse(-r*0.7, r*0.1, r*0.55, r*0.3, -0.3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(r*0.7, r*0.1, r*0.55, r*0.3, 0.3, 0, Math.PI*2);
+    ctx.fill();
+
+    // Body
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r*0.65, r*0.95, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Face disk
+    ctx.fillStyle = '#f0eadf';
+    ctx.beginPath();
+    ctx.ellipse(0, -r*0.25, r*0.55, r*0.6, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Eyes
+    ctx.fillStyle = '#222';
+    ctx.beginPath(); ctx.arc(-r*0.2, -r*0.3, 3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(r*0.2, -r*0.3, 3, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(-r*0.16, -r*0.34, 1, 0, Math.PI*2); ctx.fill();
+
+    // Beak
+    ctx.fillStyle = '#d4a017';
+    ctx.beginPath();
+    ctx.moveTo(0, -r*0.18);
+    ctx.lineTo(-r*0.08, 0);
+    ctx.lineTo(r*0.08, 0);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  _drawMoose(ctx, r) {
+    const c = this.hitFlash > 0 ? '#ff9999' : this.bodyColor;
+
+    // Legs
+    ctx.fillStyle = '#7a5030';
+    for (const [lx, ly] of [[-r*0.45, r*0.55],[r*0.45, r*0.55],[-r*0.2, r*0.65],[r*0.2, r*0.65]]) {
+      ctx.fillRect(lx - 3, ly, 6, r*0.6);
+    }
+
+    // Body
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r*0.9, r*0.75, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Neck + head
+    ctx.fillRect(-r*0.18, -r*0.95, r*0.36, r*0.55);
+    ctx.beginPath();
+    ctx.ellipse(0, -r*1.1, r*0.5, r*0.45, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Antlers
+    ctx.strokeStyle = '#f0c040';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-r*0.25, -r*1.35);
+    ctx.lineTo(-r*0.65, -r*1.85);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(r*0.25, -r*1.35);
+    ctx.lineTo(r*0.65, -r*1.85);
+    ctx.stroke();
+
+    // Eye
+    ctx.fillStyle = '#1a1a1a';
+    ctx.beginPath();
+    ctx.arc(-r*0.12, -r*1.15, 2.5, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  _drawCougar(ctx, r) {
+    const c = this.hitFlash > 0 ? '#ff9999' : this.bodyColor;
+
+    // Tail
+    ctx.strokeStyle = '#a7834a';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, r*0.85);
+    ctx.lineTo(0, r*1.35);
+    ctx.stroke();
+
+    // Body
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r*0.75, r, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Head
+    ctx.beginPath();
+    ctx.ellipse(0, -r*0.9, r*0.55, r*0.55, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Ears
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.moveTo(-r*0.35, -r*1.2); ctx.lineTo(-r*0.2, -r*1.6); ctx.lineTo(-r*0.05, -r*1.2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(r*0.35, -r*1.2); ctx.lineTo(r*0.2, -r*1.6); ctx.lineTo(r*0.05, -r*1.2);
+    ctx.fill();
+
+    // Eyes
+    ctx.fillStyle = '#1a1a1a';
+    ctx.beginPath(); ctx.arc(-r*0.16, -r, 2.2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(r*0.16, -r, 2.2, 0, Math.PI*2); ctx.fill();
+
+    // Charge indicator
+    if (this.state === STATE.CHARGE) {
+      ctx.strokeStyle = '#ff4444';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 1.5, 0, Math.PI*2);
+      ctx.stroke();
+    }
+  }
 }
 
 // ── Animal Spawner ────────────────────────────────────
@@ -675,21 +962,36 @@ class AnimalSpawner {
   // Spawn a wave of animals for the given day number
   spawnDay(day, forest) {
     this.animals = [];
-    const base = 5 + day * 2.5;
+    const base = 7 + day * 3.1;
 
     // Passives
-    const rabbitsCount = Math.floor(base * 1.2);
-    const foxesCount = Math.floor(base * 0.6);
-    const deerCount = Math.floor(base * 0.4);
+    const rabbitsCount = Math.floor(base * 1.55);
+    const foxesCount = Math.floor(base * 0.78);
+    const deerCount = Math.floor(base * 0.55);
 
     this._spawnType('rabbit', rabbitsCount, forest);
     this._spawnType('fox',    foxesCount, forest);
     this._spawnType('deer',   deerCount, forest);
 
+    if (day >= 2) {
+      const mooseCount = Math.max(1, Math.floor((day - 1) * 0.55));
+      this._spawnType('moose', mooseCount, forest);
+    }
+
+    // Owls: small rare ambient target (more likely later)
+    const owlsCount = Math.max(0, Math.floor((day - 1) * 0.35));
+    if (owlsCount > 0) this._spawnType('owl', owlsCount, forest);
+
     // Predators
     // Wolf starts at Day 1
     const wolvesCount = Math.max(1, Math.floor(day * 0.8));
     this._spawnType('wolf', wolvesCount, forest);
+
+    // Boar starts at Day 2
+    if (day >= 2) {
+      const boarsCount = Math.max(1, Math.floor((day - 1) * 0.55));
+      this._spawnType('boar', boarsCount, forest);
+    }
 
     // Bear starts at Day 2
     if (day >= 2) {
@@ -697,11 +999,29 @@ class AnimalSpawner {
       this._spawnType('bear', bearsCount, forest);
     }
 
+    if (day >= 3) {
+      const cougarsCount = Math.max(1, Math.floor((day - 2) * 0.55));
+      this._spawnType('cougar', cougarsCount, forest);
+    }
+
     // Legendary White Stag (rare, chance scales with day)
     const stagChance = 0.08 + day * 0.02;
     if (Math.random() < Math.min(0.25, stagChance)) {
       this._spawnType('stag', 1, forest);
     }
+  }
+
+  spawnNightBoost(day, forest) {
+    // Add extra predators at night (keeps existing animals)
+    const wolves = Math.max(1, Math.floor(1 + day * 0.35));
+    const boars  = day >= 2 ? Math.max(1, Math.floor(1 + (day - 1) * 0.25)) : 0;
+    const bears  = day >= 2 ? Math.max(1, Math.floor(1 + (day - 1) * 0.18)) : 0;
+    const cougars = day >= 3 ? Math.max(1, Math.floor(1 + (day - 2) * 0.25)) : 0;
+
+    this._spawnType('wolf', wolves, forest);
+    if (boars > 0) this._spawnType('boar', boars, forest);
+    if (bears > 0) this._spawnType('bear', bears, forest);
+    if (cougars > 0) this._spawnType('cougar', cougars, forest);
   }
 
   _spawnType(type, count, forest) {

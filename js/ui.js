@@ -98,6 +98,9 @@ class UIManager {
     this.healthBar   = document.getElementById('health-bar');
     this.staminaBar  = document.getElementById('stamina-bar');
 
+    this.questPanel  = document.getElementById('hud-quest');
+    this.questToggle = document.getElementById('quest-toggle');
+
     this.screenTitle    = document.getElementById('screen-title');
     this.screenCamp     = document.getElementById('screen-camp');
     this.screenPause    = document.getElementById('screen-pause');
@@ -119,6 +122,12 @@ class UIManager {
     // Track last arrow count for pickup events
     this._lastArrows = 0;
     this.flashRedAlpha = 0;
+
+    if (this.questToggle && this.questPanel) {
+      this.questToggle.addEventListener('click', () => {
+        this.questPanel.classList.toggle('hidden');
+      });
+    }
   }
 
   // ── Show / hide screens ───────────────────────────
@@ -135,13 +144,13 @@ class UIManager {
   }
   showHUD() {
     this.hud.classList.remove('hidden');
-    const q = document.getElementById('hud-quest');
-    if (q) q.classList.remove('hidden');
+    if (this.questToggle) this.questToggle.classList.remove('hidden');
+    if (this.questPanel) this.questPanel.classList.add('hidden');
   }
   hideHUD() {
     this.hud.classList.add('hidden');
-    const q = document.getElementById('hud-quest');
-    if (q) q.classList.add('hidden');
+    if (this.questToggle) this.questToggle.classList.add('hidden');
+    if (this.questPanel) this.questPanel.classList.add('hidden');
   }
 
   _show(name) {
@@ -187,9 +196,17 @@ class UIManager {
       if (quest) {
         qDesc.textContent = quest.desc;
         qProg.textContent = `${progress} / ${quest.targetCount}`;
+        if (this.questToggle) {
+          this.questToggle.textContent = '!';
+          this.questToggle.classList.add('active');
+        }
       } else {
         qDesc.textContent = 'None';
         qProg.textContent = '0 / 0';
+        if (this.questToggle) {
+          this.questToggle.textContent = '?';
+          this.questToggle.classList.remove('active');
+        }
       }
     }
   }
@@ -205,7 +222,7 @@ class UIManager {
 
   // ── Kill feed ─────────────────────────────────────
   addKill(animal) {
-    const icons = { rabbit:'🐇', fox:'🦊', deer:'🦌', bear:'🐻', stag:'✨' };
+    const icons = { rabbit:'🐇', fox:'🦊', deer:'🦌', bear:'🐻', stag:'✨', wolf:'🐺', boar:'🐗', owl:'🦉', moose:'🫎', cougar:'🐆' };
     const text  = `${icons[animal.type]||'?'} ${animal.name} — $${animal.value}`;
     this.killFeed.push(new KillFeedEntry(text));
     if (this.killFeed.length > 5) this.killFeed.shift();

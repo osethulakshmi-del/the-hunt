@@ -285,30 +285,59 @@ class Player {
     ctx.translate(sx, sy);
     ctx.rotate(this.angle + Math.PI/2);
 
-    // Cape / cloak
-    const bob = Math.sin(this.walkCycle) * 2;
-    ctx.fillStyle = '#6b3a1f';
+    const bob = Math.sin(this.walkCycle) * 1.2;
+    const hy = bob * 0.2;
+
+    // Hat drop shadow (top-down)
+    ctx.fillStyle = 'rgba(0,0,0,0.32)';
     ctx.beginPath();
-    ctx.ellipse(0, bob*0.3, this.radius, this.radius*1.3, 0, 0, Math.PI*2);
+    ctx.ellipse(0, hy + 2.0, this.radius*1.03, this.radius*0.64, 0, 0, Math.PI*2);
     ctx.fill();
 
-    // Hood
-    ctx.fillStyle = '#8B4513';
+    // Brim (ring)
+    ctx.fillStyle = '#1f140c';
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(0, -this.radius*0.5 + bob*0.2, this.radius*0.65, 0, Math.PI*2);
+    ctx.ellipse(0, hy, this.radius*1.03, this.radius*0.62, 0, 0, Math.PI*2);
     ctx.fill();
+    ctx.stroke();
 
-    // Face
-    ctx.fillStyle = '#d4a076';
+    // Inner brim cutout to make it feel like a ring
+    ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
-    ctx.arc(0, -this.radius*0.55 + bob*0.2, this.radius*0.42, 0, Math.PI*2);
+    ctx.ellipse(0, hy, this.radius*0.72, this.radius*0.40, 0, 0, Math.PI*2);
     ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
 
-    // Eyes
-    ctx.fillStyle = '#222';
-    const eyeY = -this.radius*0.6 + bob*0.2;
-    ctx.beginPath(); ctx.arc(-4, eyeY, 2, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc( 4, eyeY, 2, 0, Math.PI*2); ctx.fill();
+    // Crown
+    ctx.fillStyle = '#2a1b10';
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 2;
+
+    const cw = this.radius * 0.92;
+    const ch = this.radius * 0.62;
+    const y0 = hy - this.radius * 0.10;
+    const pinch = this.radius * 0.16;
+
+    // Fedora-like crown silhouette (top-down): rounded sides + pinched front/back
+    ctx.beginPath();
+    ctx.moveTo(-cw * 0.55, y0 - ch * 0.10);
+    ctx.quadraticCurveTo(-cw, y0 - ch * 0.55, -cw * 0.55, y0 - ch);
+    ctx.quadraticCurveTo(-pinch, y0 - ch * 1.10, 0, y0 - ch * 0.92);
+    ctx.quadraticCurveTo(pinch, y0 - ch * 1.10, cw * 0.55, y0 - ch);
+    ctx.quadraticCurveTo(cw, y0 - ch * 0.55, cw * 0.55, y0 - ch * 0.10);
+    ctx.quadraticCurveTo(0, y0 + ch * 0.35, -cw * 0.55, y0 - ch * 0.10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Band highlight
+    ctx.strokeStyle = 'rgba(240,192,64,0.18)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(0, y0 - ch * 0.25, this.radius*0.46, this.radius*0.26, 0, 0, Math.PI*2);
+    ctx.stroke();
 
     // Bow (rotated to aim direction)
     ctx.restore();
