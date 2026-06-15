@@ -1,0 +1,369 @@
+/* =====================================================
+   THE HUNT — Global Stylesheet
+   Dark forest aesthetic with warm amber accents
+====================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
+/* ---------- Reset / Base ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0a0e0a;
+  --surface:   #111811;
+  --border:    #2a3d2a;
+  --gold:      #f0c040;
+  --gold-dim:  #b89030;
+  --green:     #3a6b3a;
+  --green-l:   #5aab5a;
+  --red:       #c0392b;
+  --red-l:     #e74c3c;
+  --blue:      #2980b9;
+  --text:      #ddeedd;
+  --text-dim:  #8aaa8a;
+  --font-game: 'Cinzel', serif;
+  --font-ui:   'Inter', sans-serif;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ---------- Game Wrapper ---------- */
+#game-wrapper {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---------- Canvas ---------- */
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* ---------- Screens (overlays) ---------- */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 10, 5, 0.88);
+  backdrop-filter: blur(6px);
+  z-index: 20;
+  animation: fadeIn 0.3s ease;
+}
+
+.screen.hidden { display: none; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- Screen Box ---------- */
+.screen-box {
+  background: linear-gradient(145deg, #141e14, #0d150d);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px 48px;
+  min-width: 340px;
+  max-width: 560px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 20px rgba(90,171,90,0.1) inset;
+}
+
+.screen-box.wide { max-width: 720px; }
+
+/* ---------- Title Screen ---------- */
+.game-title {
+  font-family: var(--font-game);
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(240,192,64,0.5);
+  letter-spacing: 4px;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  margin-bottom: 28px;
+  letter-spacing: 1px;
+}
+
+.key-guide {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 28px;
+  text-align: left;
+  display: inline-block;
+  width: 100%;
+}
+
+.key-guide p {
+  margin: 6px 0;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+}
+
+kbd {
+  display: inline-block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: 2px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 0.8rem;
+  font-family: var(--font-ui);
+  color: var(--gold);
+  margin-right: 2px;
+}
+
+/* ---------- Buttons ---------- */
+.btn-primary, .btn-secondary {
+  display: inline-block;
+  padding: 12px 32px;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-game);
+  font-size: 1rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  margin: 6px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4a8f3f, #2d6b28);
+  color: #e8ffe8;
+  box-shadow: 0 4px 14px rgba(74,143,63,0.4);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #5aaf4f, #3d8b38);
+  box-shadow: 0 6px 20px rgba(74,143,63,0.6);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: rgba(255,255,255,0.06);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+/* ---------- HUD ---------- */
+#hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#hud.hidden { display: none; }
+
+#hud-top {
+  position: absolute;
+  top: 14px; left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.hud-stat {
+  background: rgba(10,14,10,0.82);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  backdrop-filter: blur(4px);
+  letter-spacing: 0.5px;
+}
+
+#hud-bottom-left {
+  position: absolute;
+  bottom: 20px; left: 20px;
+  width: 200px;
+}
+
+.bar-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.bar-bg {
+  width: 100%;
+  height: 10px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #c0392b, #e74c3c);
+  border-radius: 6px;
+  transition: width 0.2s ease;
+}
+
+#stamina-bar {
+  background: linear-gradient(90deg, #d4a017, #f0c040) !important;
+}
+
+#hud-bottom-right {
+  position: absolute;
+  bottom: 20px; right: 20px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  background: rgba(10,14,10,0.7);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  backdrop-filter: blur(4px);
+}
+
+/* ---------- Camp / Shop ---------- */
+#screen-camp h2 {
+  font-family: var(--font-game);
+  font-size: 1.8rem;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+.camp-msg {
+  font-size: 0.88rem;
+  color: var(--gold-dim);
+  margin-bottom: 20px;
+  min-height: 1.2em;
+}
+
+#shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.shop-item {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  pointer-events: all;
+}
+
+.shop-item:hover:not(.disabled) {
+  border-color: var(--gold-dim);
+  background: rgba(240,192,64,0.07);
+  transform: translateY(-2px);
+}
+
+.shop-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.shop-icon { font-size: 2rem; margin-bottom: 8px; }
+.shop-name { font-size: 0.82rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.shop-desc { font-size: 0.72rem; color: var(--text-dim); margin-bottom: 8px; }
+.shop-cost { font-size: 0.85rem; font-weight: 700; color: var(--gold); }
+
+.camp-actions { display: flex; justify-content: center; gap: 12px; margin-top: 8px; }
+
+/* ---------- Game Over ---------- */
+.dead-title {
+  font-family: var(--font-game);
+  font-size: 2.2rem;
+  color: var(--red-l);
+  text-shadow: 0 0 20px rgba(231,76,60,0.6);
+  margin-bottom: 20px;
+}
+
+#go-stats {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  text-align: left;
+  font-size: 0.88rem;
+  line-height: 1.9;
+  color: var(--text-dim);
+}
+
+#go-stats strong { color: var(--text); }
+
+/* ---------- Pause Screen ---------- */
+#screen-pause h2 {
+  font-family: var(--font-game);
+  font-size: 1.8rem;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ---------- Crosshair override ---------- */
+#gameCanvas { cursor: crosshair; }
+
+/* ---------- Quest HUD ---------- */
+#hud-quest {
+  position: absolute;
+  top: 14px; right: 20px;
+  max-width: 250px;
+  background: rgba(10, 14, 10, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  display: block;
+}
+#hud-quest.hidden { display: none; }
+#hud-quest .quest-title {
+  font-size: 0.72rem;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+#hud-quest .quest-desc {
+  color: var(--text);
+  font-size: 0.85rem;
+}
+#hud-quest .quest-progress {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  margin-top: 2px;
+}

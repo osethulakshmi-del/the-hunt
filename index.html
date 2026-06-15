@@ -1,0 +1,110 @@
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>THE HUNT</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- =====================================================
+       THE HUNT - Main Entry Point
+       All rendering is done on the canvas below.
+       The HUD overlay sits on top of it via CSS.
+  ====================================================== -->
+
+  <div id="game-wrapper">
+
+    <!-- Main game canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD overlay (rendered by ui.js) -->
+    <div id="hud" class="hidden">
+      <div id="hud-top">
+        <div class="hud-stat" id="hud-day">📅 Day <span id="day-val">1</span></div>
+        <div class="hud-stat" id="hud-money">💰 <span id="money-val">0</span></div>
+        <div class="hud-stat" id="hud-arrows">🏹 <span id="arrows-val">10</span></div>
+        <div class="hud-stat" id="hud-bag">🎒 <span id="bag-val">0</span> / <span id="bag-max">5</span></div>
+      </div>
+
+      <!-- Quest Overlay (top-right corner) -->
+      <div id="hud-quest" class="hidden">
+        <div class="quest-title">Active Quest</div>
+        <div id="quest-desc">None</div>
+        <div id="quest-progress">0 / 0</div>
+      </div>
+
+      <div id="hud-bottom-left">
+        <div class="bar-label">❤️ Health</div>
+        <div class="bar-bg"><div class="bar-fill" id="health-bar"></div></div>
+        <div class="bar-label" style="margin-top:6px;">⚡ Stamina</div>
+        <div class="bar-bg"><div class="bar-fill" id="stamina-bar" style="background:#f0c040;"></div></div>
+      </div>
+
+      <div id="hud-bottom-right">
+        <span id="hud-hint">E = Return to Camp &nbsp;|&nbsp; ESC = Pause</span>
+      </div>
+    </div>
+
+    <!-- ===== SCREENS ===== -->
+
+    <!-- Title / Start Screen -->
+    <div id="screen-title" class="screen">
+      <div class="screen-box">
+        <h1 class="game-title">🌲 THE HUNT 🌲</h1>
+        <p class="subtitle">A top-down hunting adventure</p>
+        <div class="key-guide">
+          <p><kbd>W A S D</kbd> Move</p>
+          <p><kbd>Mouse</kbd> Aim &nbsp; <kbd>LClick</kbd> Shoot</p>
+          <p><kbd>E</kbd> Return to Camp &nbsp; <kbd>ESC</kbd> Pause</p>
+        </div>
+        <button id="btn-start" class="btn-primary">Start Hunt</button>
+      </div>
+    </div>
+
+    <!-- Camp / Shop Screen -->
+    <div id="screen-camp" class="screen hidden">
+      <div class="screen-box wide">
+        <h2>⛺ Camp</h2>
+        <p id="camp-msg" class="camp-msg"></p>
+
+        <div id="shop-grid"></div>
+
+        <div class="camp-actions">
+          <button id="btn-enter-forest" class="btn-primary">🌲 Enter Forest</button>
+          <button id="btn-next-day" class="btn-secondary">☀️ Next Day</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pause Screen -->
+    <div id="screen-pause" class="screen hidden">
+      <div class="screen-box">
+        <h2>⏸ Paused</h2>
+        <button id="btn-resume" class="btn-primary">Resume</button>
+        <button id="btn-quit-pause" class="btn-secondary">Quit to Title</button>
+      </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="screen-gameover" class="screen hidden">
+      <div class="screen-box">
+        <h2 class="dead-title">💀 You Died</h2>
+        <div id="go-stats"></div>
+        <button id="btn-restart" class="btn-primary">Play Again</button>
+      </div>
+    </div>
+
+  </div><!-- end #game-wrapper -->
+
+  <!-- ===== JS Modules (order matters) ===== -->
+  <script src="js/forest.js"></script>
+  <script src="js/arrow.js"></script>
+  <script src="js/animal.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+
+</body>
+</html>
