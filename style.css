@@ -359,12 +359,18 @@ kbd {
 
   .m-actions {
     position: absolute;
-    left: 50%;
-    bottom: 14px;
-    transform: translateX(-50%);
-    display: flex;
+    right: 14px;
+    bottom: 188px;
+    display: grid;
+    grid-template-columns: repeat(2, 58px);
     gap: 10px;
     pointer-events: auto;
+  }
+
+  @media (min-width: 620px) and (min-height: 420px) {
+    .m-actions {
+      bottom: 294px;
+    }
   }
 
   .m-btn {
